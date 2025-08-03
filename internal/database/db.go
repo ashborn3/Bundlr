@@ -47,3 +47,23 @@ func CreatePackage(name, ownerID string) (string, error) {
 	).Scan(&id)
 	return id, err
 }
+
+func CreateVersion(packageID, version, fileKey string) (string, error) {
+	var id string
+	err := DB.QueryRow(
+		context.Background(),
+		"INSERT INTO versions (package_id, version, file_key) VALUES ($1, $2, $3) RETURNING id",
+		packageID, version, fileKey,
+	).Scan(&id)
+	return id, err
+}
+
+func GetPackageByName(name string) (string, string, error) {
+	var id, ownerID string
+	err := DB.QueryRow(
+		context.Background(),
+		"SELECT id, owner_id FROM packages WHERE name=$1",
+		name,
+	).Scan(&id, &ownerID)
+	return id, ownerID, err
+}
