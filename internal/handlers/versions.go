@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"bundlr/internal/auth"
 	"bundlr/internal/database"
 	"bundlr/internal/storage"
 	"bundlr/internal/utils"
@@ -19,48 +18,33 @@ type VersionInput struct {
 	FileName string `json:"file_name"`
 }
 
-func CreateVersion(w http.ResponseWriter, r *http.Request) {
-	userID := auth.GetUserID(r)
+func DownloadVersion(w http.ResponseWriter, r *http.Request) {
 	packageName := chi.URLParam(r, "name")
+	version := chi.URLParam(r, "version")
 
-	pkgID, ownerID, err := database.GetPackageByName(packageName)
+	pkgID, _, err := database.GetPackageByName(packageName)
 	if err != nil {
 		http.Error(w, "package not found", http.StatusNotFound)
 		return
 	}
 
-	if ownerID != userID {
-		http.Error(w, "not authorized", http.StatusForbidden)
-		return
-	}
-
-	var input VersionInput
-	if err := json.NewDecoder(r.Body).Decode(&input); err != nil || input.Version == "" {
-		http.Error(w, "invalid input", http.StatusBadRequest)
-		return
-	}
-
-	fileKey := utils.MakeFileKey(packageName, input.Version, input.FileName)
-
-	uploadURL, err := storage.GeneratePresignedUpload(fileKey)
+	fileVersion, err := database.GetVersion(pkgID, version)
 	if err != nil {
-		http.Error(w, "failed to generate upload url", http.StatusInternalServerError)
+		http.Error(w, "version not found", http.StatusNotFound)
 		return
 	}
 
-	id, err := database.CreateVersion(pkgID, input.Version, fileKey, input.FileName)
+	downloadURL, err := storage.GeneratePresignedDownload(fileVersion.FileKey)
 	if err != nil {
-		http.Error(w, "failed to create version", http.StatusBadRequest)
+		http.Error(w, "failed to generate download URL", http.StatusInternalServerError)
 		return
 	}
 
 	json.NewEncoder(w).Encode(map[string]string{
-		"id":         id,
-		"version":    input.Version,
-		"file_name":  input.FileName,
-		"file_key":   fileKey,
-		"upload_url": uploadURL,
+		"download_url": downloadURL,
+		"file_name":    fileVersion.FileName,
 	})
+
 }
 
 func GetUploadURL(w http.ResponseWriter, r *http.Request) {
