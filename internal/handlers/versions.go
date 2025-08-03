@@ -56,3 +56,30 @@ func CreateVersion(w http.ResponseWriter, r *http.Request) {
 		"upload_url": uploadURL,
 	})
 }
+
+func DownloadVersion(w http.ResponseWriter, r *http.Request) {
+	packageName := chi.URLParam(r, "name")
+	version := chi.URLParam(r, "version")
+
+	pkgID, _, err := database.GetPackageByName(packageName)
+	if err != nil {
+		http.Error(w, "package not found", http.StatusNotFound)
+		return
+	}
+
+	_, fileKey, err := database.GetVersion(pkgID, version)
+	if err != nil {
+		http.Error(w, "version not found", http.StatusNotFound)
+		return
+	}
+
+	downloadURL, err := storage.GeneratePresignedDownload(fileKey)
+	if err != nil {
+		http.Error(w, "failed to generate download URL", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{
+		"download_url": downloadURL,
+	})
+}
