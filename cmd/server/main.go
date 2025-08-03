@@ -9,6 +9,7 @@ import (
 
 	"bundlr/internal/config"
 	"bundlr/internal/database"
+	"bundlr/internal/handlers"
 )
 
 func main() {
@@ -23,6 +24,8 @@ func main() {
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
 	})
+	r.Post("/auth/register", handlers.Register)
+	r.Post("/auth/login", handlers.Login)
 
 	fmt.Println("🚀 Bundlr running on port", cfg.Port)
 	log.Fatal(http.ListenAndServe(":"+cfg.Port, r))
