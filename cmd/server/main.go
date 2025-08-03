@@ -4,25 +4,26 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/go-chi/chi/v5"
+
+	"bundlr/internal/config"
+	"bundlr/internal/database"
 )
 
 func main() {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
+	cfg := config.Load()
+
+	if err := database.Connect(cfg.DatabaseURL); err != nil {
+		log.Fatal(err)
 	}
+	defer database.DB.Close()
 
 	r := chi.NewRouter()
-
-	r.Get("/ping", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"resp":"pong"}`))
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte("OK"))
 	})
 
-	fmt.Println("Bundlr server running on port", port)
-	log.Fatal(http.ListenAndServe(":"+port, r))
+	fmt.Println("🚀 Bundlr running on port", cfg.Port)
+	log.Fatal(http.ListenAndServe(":"+cfg.Port, r))
 }
