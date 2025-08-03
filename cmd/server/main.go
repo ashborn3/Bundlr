@@ -30,6 +30,8 @@ func main() {
 	r.Group(func(protected chi.Router) {
 		protected.Use(auth.AuthMiddleware)
 		protected.Post("/packages", handlers.CreatePackage)
+		protected.Post("/packages/{name}/versions", handlers.CreateVersion)
+
 	})
 
 	fmt.Println("🚀 Bundlr running on port", cfg.Port)
