@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -83,4 +84,57 @@ func GetVersion(packageID, version string) (Version, error) {
 		packageID, version,
 	).Scan(&v.ID, &v.FileKey, &v.FileName)
 	return v, err
+}
+
+type Package struct {
+	ID      string
+	Name    string
+	OwnerID string
+}
+
+func ListPackages() ([]Package, error) {
+	rows, err := DB.Query(context.Background(),
+		"SELECT id, name, owner_id FROM packages ORDER BY name ASC")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var packages []Package
+	for rows.Next() {
+		var p Package
+		if err := rows.Scan(&p.ID, &p.Name, &p.OwnerID); err != nil {
+			return nil, err
+		}
+		packages = append(packages, p)
+	}
+	return packages, nil
+}
+
+type VersionInfo struct {
+	ID        string
+	Version   string
+	FileName  string
+	CreatedAt time.Time
+}
+
+func ListVersions(packageID string) ([]VersionInfo, error) {
+	rows, err := DB.Query(context.Background(),
+		"SELECT id, version, file_name, created_at FROM versions WHERE package_id=$1 ORDER BY created_at DESC",
+		packageID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var versions []VersionInfo
+	for rows.Next() {
+		var v VersionInfo
+		if err := rows.Scan(&v.ID, &v.Version, &v.FileName, &v.CreatedAt); err != nil {
+			return nil, err
+		}
+		versions = append(versions, v)
+	}
+	return versions, nil
 }

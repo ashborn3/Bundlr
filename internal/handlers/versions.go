@@ -111,14 +111,12 @@ func ConfirmVersionUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ✅ Get package ID
 	pkgID, _, err := database.GetPackageByName(packageName)
 	if err != nil {
 		http.Error(w, "package not found", http.StatusNotFound)
 		return
 	}
 
-	// ✅ Insert version into DB
 	versionID, err := database.CreateVersion(pkgID, input.Version, input.FileKey, input.FileName)
 	if err != nil {
 		http.Error(w, "failed to create version", http.StatusInternalServerError)
@@ -130,4 +128,22 @@ func ConfirmVersionUpload(w http.ResponseWriter, r *http.Request) {
 		"version":   input.Version,
 		"file_name": input.FileName,
 	})
+}
+
+func ListVersions(w http.ResponseWriter, r *http.Request) {
+	packageName := chi.URLParam(r, "name")
+
+	pkgID, _, err := database.GetPackageByName(packageName)
+	if err != nil {
+		http.Error(w, "package not found", http.StatusNotFound)
+		return
+	}
+
+	versions, err := database.ListVersions(pkgID)
+	if err != nil {
+		http.Error(w, "failed to fetch versions", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(versions)
 }

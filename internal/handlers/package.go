@@ -31,3 +31,12 @@ func CreatePackage(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(map[string]string{"id": id, "name": input.Name})
 }
+
+func ListPackages(w http.ResponseWriter, r *http.Request) {
+	pkgs, err := database.ListPackages()
+	if err != nil {
+		http.Error(w, "failed to fetch packages", http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(pkgs)
+}
