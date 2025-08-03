@@ -34,8 +34,8 @@ func main() {
 		protected.Use(auth.AuthMiddleware)
 		protected.Post("/packages", handlers.CreatePackage)
 		protected.Post("/packages/{name}/versions", handlers.CreateVersion)
-
 	})
+	r.Get("/packages/{name}/versions/{version}/download", handlers.DownloadVersion)
 
 	fmt.Println("🚀 Bundlr running on port", cfg.Port)
 	log.Fatal(http.ListenAndServe(":"+cfg.Port, r))
