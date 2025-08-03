@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -63,7 +64,7 @@ func GetPackageByName(name string) (string, string, error) {
 	err := DB.QueryRow(
 		context.Background(),
 		"SELECT id, owner_id FROM packages WHERE name=$1",
-		name,
+		strings.ToLower(name),
 	).Scan(&id, &ownerID)
 	return id, ownerID, err
 }

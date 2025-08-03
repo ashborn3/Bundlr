@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"bundlr/internal/auth"
 	"bundlr/internal/database"
@@ -20,6 +21,7 @@ func CreatePackage(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid input", http.StatusBadRequest)
 		return
 	}
+	input.Name = strings.ToLower(input.Name)
 
 	id, err := database.CreatePackage(input.Name, userID)
 	if err != nil {
