@@ -1,0 +1,1 @@
+ALTER TABLE versions ADD COLUMN file_name TEXT NOT NULL DEFAULT '';
