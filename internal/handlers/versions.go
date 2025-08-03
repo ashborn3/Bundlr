@@ -7,12 +7,14 @@ import (
 	"bundlr/internal/auth"
 	"bundlr/internal/database"
 	"bundlr/internal/storage"
+	"bundlr/internal/utils"
 
 	"github.com/go-chi/chi/v5"
 )
 
 type VersionInput struct {
-	Version string `json:"version"`
+	Version  string `json:"version"`
+	FileName string `json:"file_name"`
 }
 
 func CreateVersion(w http.ResponseWriter, r *http.Request) {
@@ -36,14 +38,15 @@ func CreateVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fileKey := "uploads/" + packageName + "/" + input.Version + ".tar.gz"
+	fileKey := utils.MakeFileKey(packageName, input.Version, input.FileName)
+
 	uploadURL, err := storage.GeneratePresignedUpload(fileKey)
 	if err != nil {
 		http.Error(w, "failed to generate upload url", http.StatusInternalServerError)
 		return
 	}
 
-	id, err := database.CreateVersion(pkgID, input.Version, fileKey)
+	id, err := database.CreateVersion(pkgID, input.Version, fileKey, input.FileName)
 	if err != nil {
 		http.Error(w, "failed to create version", http.StatusBadRequest)
 		return
@@ -52,9 +55,11 @@ func CreateVersion(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"id":         id,
 		"version":    input.Version,
+		"file_name":  input.FileName,
 		"file_key":   fileKey,
 		"upload_url": uploadURL,
 	})
+
 }
 
 func DownloadVersion(w http.ResponseWriter, r *http.Request) {
@@ -67,13 +72,13 @@ func DownloadVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, fileKey, err := database.GetVersion(pkgID, version)
+	fileVersion, err := database.GetVersion(pkgID, version)
 	if err != nil {
 		http.Error(w, "version not found", http.StatusNotFound)
 		return
 	}
 
-	downloadURL, err := storage.GeneratePresignedDownload(fileKey)
+	downloadURL, err := storage.GeneratePresignedDownload(fileVersion.FileKey)
 	if err != nil {
 		http.Error(w, "failed to generate download URL", http.StatusInternalServerError)
 		return
@@ -81,5 +86,7 @@ func DownloadVersion(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(map[string]string{
 		"download_url": downloadURL,
+		"file_name":    fileVersion.FileName,
 	})
+
 }
