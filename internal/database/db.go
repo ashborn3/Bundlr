@@ -37,3 +37,13 @@ func GetUserByEmail(email string) (string, string, error) {
 	).Scan(&id, &passwordHash)
 	return id, passwordHash, err
 }
+
+func CreatePackage(name, ownerID string) (string, error) {
+	var id string
+	err := DB.QueryRow(
+		context.Background(),
+		"INSERT INTO packages (name, owner_id) VALUES ($1, $2) RETURNING id",
+		name, ownerID,
+	).Scan(&id)
+	return id, err
+}
