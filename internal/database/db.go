@@ -68,3 +68,13 @@ func GetPackageByName(name string) (string, string, error) {
 	).Scan(&id, &ownerID)
 	return id, ownerID, err
 }
+
+func GetVersion(packageID, version string) (string, string, error) {
+	var id, fileKey string
+	err := DB.QueryRow(
+		context.Background(),
+		"SELECT id, file_key FROM versions WHERE package_id=$1 AND version=$2",
+		packageID, version,
+	).Scan(&id, &fileKey)
+	return id, fileKey, err
+}
