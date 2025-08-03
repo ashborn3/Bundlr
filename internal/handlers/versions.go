@@ -6,6 +6,7 @@ import (
 
 	"bundlr/internal/auth"
 	"bundlr/internal/database"
+	"bundlr/internal/storage"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -35,8 +36,12 @@ func CreateVersion(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// PLACEHOLDER
 	fileKey := "uploads/" + packageName + "/" + input.Version + ".tar.gz"
+	uploadURL, err := storage.GeneratePresignedUpload(fileKey)
+	if err != nil {
+		http.Error(w, "failed to generate upload url", http.StatusInternalServerError)
+		return
+	}
 
 	id, err := database.CreateVersion(pkgID, input.Version, fileKey)
 	if err != nil {
@@ -48,6 +53,6 @@ func CreateVersion(w http.ResponseWriter, r *http.Request) {
 		"id":         id,
 		"version":    input.Version,
 		"file_key":   fileKey,
-		"upload_url": "https://placeholder-upload-url", // later replace with MinIO presigned URL
+		"upload_url": uploadURL,
 	})
 }
