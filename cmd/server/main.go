@@ -11,10 +11,13 @@ import (
 	"bundlr/internal/config"
 	"bundlr/internal/database"
 	"bundlr/internal/handlers"
+	"bundlr/internal/storage"
 )
 
 func main() {
 	cfg := config.Load()
+
+	storage.InitMinIO()
 
 	if err := database.Connect(cfg.DatabaseURL); err != nil {
 		log.Fatal(err)
