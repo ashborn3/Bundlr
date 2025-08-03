@@ -10,6 +10,12 @@ import (
 
 var DB *pgxpool.Pool
 
+type Version struct {
+	ID       string
+	FileKey  string
+	FileName string
+}
+
 func Connect(databaseURL string) error {
 	var err error
 	DB, err = pgxpool.New(context.Background(), databaseURL)
@@ -49,12 +55,12 @@ func CreatePackage(name, ownerID string) (string, error) {
 	return id, err
 }
 
-func CreateVersion(packageID, version, fileKey string) (string, error) {
+func CreateVersion(packageID, version, fileKey, fileName string) (string, error) {
 	var id string
 	err := DB.QueryRow(
 		context.Background(),
-		"INSERT INTO versions (package_id, version, file_key) VALUES ($1, $2, $3) RETURNING id",
-		packageID, version, fileKey,
+		"INSERT INTO versions (package_id, version, file_key, file_name) VALUES ($1, $2, $3, $4) RETURNING id",
+		packageID, version, fileKey, fileName,
 	).Scan(&id)
 	return id, err
 }
@@ -69,12 +75,12 @@ func GetPackageByName(name string) (string, string, error) {
 	return id, ownerID, err
 }
 
-func GetVersion(packageID, version string) (string, string, error) {
-	var id, fileKey string
+func GetVersion(packageID, version string) (Version, error) {
+	var v Version
 	err := DB.QueryRow(
 		context.Background(),
-		"SELECT id, file_key FROM versions WHERE package_id=$1 AND version=$2",
+		"SELECT id, file_key, file_name FROM versions WHERE package_id=$1 AND version=$2",
 		packageID, version,
-	).Scan(&id, &fileKey)
-	return id, fileKey, err
+	).Scan(&v.ID, &v.FileKey, &v.FileName)
+	return v, err
 }
