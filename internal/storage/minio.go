@@ -30,3 +30,11 @@ func GeneratePresignedUpload(fileKey string) (string, error) {
 	}
 	return url.String(), nil
 }
+
+func GeneratePresignedDownload(fileKey string) (string, error) {
+	url, err := Client.PresignedGetObject(context.Background(), Bucket, fileKey, time.Minute*10, nil)
+	if err != nil {
+		return "", err
+	}
+	return url.String(), nil
+}
