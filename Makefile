@@ -6,4 +6,7 @@ build:
 # Too bad you can't ping localhost:5432 LMAO
 reset-db:
 	migrate -path migrations -database postgres://myuser:mypassword@localhost:5432/bundlr?sslmode=disable down -all
+	migrate -path migrations -database postgres://myuser:mypassword@localhost:5432/bundlr?sslmode=disable 
+hard-reset-db:
+	migrate -path migrations -database postgres://myuser:mypassword@localhost:5432/bundlr?sslmode=disable drop -f
 	migrate -path migrations -database postgres://myuser:mypassword@localhost:5432/bundlr?sslmode=disable up
