@@ -37,8 +37,9 @@ func main() {
 	r.Group(func(protected chi.Router) {
 		protected.Use(auth.AuthMiddleware)
 		protected.Post("/packages", handlers.CreatePackage)
-		r.Post("/packages/{name}/versions/upload-url", handlers.GetUploadURL)
-		r.Post("/packages/{name}/versions/confirm", handlers.ConfirmVersionUpload)
+		protected.Post("/packages/{name}/versions/upload-url", handlers.GetUploadURL)
+		protected.Post("/packages/{name}/versions/confirm", handlers.ConfirmVersionUpload)
+		protected.Delete("/packages/{name}/versions/{version}", handlers.DeleteVersion)
 
 	})
 	r.Get("/packages/{name}/versions/{version}/download", handlers.DownloadVersion)

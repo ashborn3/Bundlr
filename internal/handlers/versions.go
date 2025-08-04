@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"bundlr/internal/auth"
 	"bundlr/internal/database"
 	"bundlr/internal/storage"
 	"bundlr/internal/utils"
@@ -62,6 +63,19 @@ func GetUploadURL(w http.ResponseWriter, r *http.Request) {
 
 	if input.Version == "" || input.FileName == "" {
 		http.Error(w, "version and file_name are required", http.StatusBadRequest)
+		return
+	}
+
+	userID := auth.GetUserID(r)
+
+	_, ownerID, err := database.GetPackageByName(packageName)
+	if err != nil {
+		http.Error(w, "package not found", http.StatusNotFound)
+		return
+	}
+
+	if ownerID != userID {
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -146,4 +160,33 @@ func ListVersions(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(versions)
+}
+
+func DeleteVersion(w http.ResponseWriter, r *http.Request) {
+	userID := auth.GetUserID(r)
+	packageName := chi.URLParam(r, "name")
+	version := chi.URLParam(r, "version")
+
+	pkgID, ownerID, err := database.GetPackageByName(packageName)
+	if err != nil {
+		http.Error(w, "package not found", http.StatusNotFound)
+		return
+	}
+	if ownerID != userID {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+
+	// Optional: Delete from MinIO
+	v, err := database.GetVersion(pkgID, version)
+	if err == nil {
+		storage.Client.RemoveObject(context.Background(), storage.Bucket, v.FileKey, minio.RemoveObjectOptions{})
+	}
+
+	if err := database.DeleteVersion(pkgID, version); err != nil {
+		http.Error(w, "failed to delete version", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

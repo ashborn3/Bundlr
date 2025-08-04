@@ -138,3 +138,12 @@ func ListVersions(packageID string) ([]VersionInfo, error) {
 	}
 	return versions, nil
 }
+
+func DeleteVersion(packageID, version string) error {
+	_, err := DB.Exec(
+		context.Background(),
+		"DELETE FROM versions WHERE package_id=$1 AND version=$2",
+		packageID, version,
+	)
+	return err
+}
