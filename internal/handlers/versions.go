@@ -114,12 +114,7 @@ func ConfirmVersionUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err := storage.Client.StatObject(
-		context.Background(),
-		storage.Bucket,
-		input.FileKey,
-		minio.StatObjectOptions{},
-	)
+	stat, err := storage.Client.StatObject(context.Background(), storage.Bucket, input.FileKey, minio.StatObjectOptions{})
 	if err != nil {
 		http.Error(w, "file not uploaded", http.StatusBadRequest)
 		return
@@ -131,11 +126,13 @@ func ConfirmVersionUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	versionID, err := database.CreateVersion(pkgID, input.Version, input.FileKey, input.FileName)
+	versionID, err := database.CreateVersion(pkgID, input.Version, input.FileKey, input.FileName, stat.Size)
 	if err != nil {
 		http.Error(w, "failed to create version", http.StatusInternalServerError)
 		return
 	}
+
+	database.IncrementDownloadCount(pkgID, versionID)
 
 	json.NewEncoder(w).Encode(map[string]string{
 		"id":        versionID,

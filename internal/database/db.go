@@ -56,12 +56,13 @@ func CreatePackage(name, ownerID string) (string, error) {
 	return id, err
 }
 
-func CreateVersion(packageID, version, fileKey, fileName string) (string, error) {
+func CreateVersion(packageID, version, fileKey, fileName string, size int64) (string, error) {
 	var id string
 	err := DB.QueryRow(
 		context.Background(),
-		"INSERT INTO versions (package_id, version, file_key, file_name) VALUES ($1, $2, $3, $4) RETURNING id",
-		packageID, version, fileKey, fileName,
+		`INSERT INTO versions (package_id, version, file_key, file_name, size)
+         VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+		packageID, version, fileKey, fileName, size,
 	).Scan(&id)
 	return id, err
 }
@@ -115,12 +116,17 @@ type VersionInfo struct {
 	ID        string
 	Version   string
 	FileName  string
+	Size      int64
+	Downloads int64
 	CreatedAt time.Time
 }
 
 func ListVersions(packageID string) ([]VersionInfo, error) {
 	rows, err := DB.Query(context.Background(),
-		"SELECT id, version, file_name, created_at FROM versions WHERE package_id=$1 ORDER BY created_at DESC",
+		`SELECT id, version, file_name, size, downloads, created_at
+         FROM versions
+         WHERE package_id=$1
+         ORDER BY created_at DESC`,
 		packageID,
 	)
 	if err != nil {
@@ -131,7 +137,7 @@ func ListVersions(packageID string) ([]VersionInfo, error) {
 	var versions []VersionInfo
 	for rows.Next() {
 		var v VersionInfo
-		if err := rows.Scan(&v.ID, &v.Version, &v.FileName, &v.CreatedAt); err != nil {
+		if err := rows.Scan(&v.ID, &v.Version, &v.FileName, &v.Size, &v.Downloads, &v.CreatedAt); err != nil {
 			return nil, err
 		}
 		versions = append(versions, v)
@@ -143,6 +149,14 @@ func DeleteVersion(packageID, version string) error {
 	_, err := DB.Exec(
 		context.Background(),
 		"DELETE FROM versions WHERE package_id=$1 AND version=$2",
+		packageID, version,
+	)
+	return err
+}
+
+func IncrementDownloadCount(packageID, version string) error {
+	_, err := DB.Exec(context.Background(),
+		`UPDATE versions SET downloads = downloads + 1 WHERE package_id=$1 AND version=$2`,
 		packageID, version,
 	)
 	return err
