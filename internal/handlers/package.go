@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"bundlr/internal/auth"
@@ -38,5 +39,25 @@ func ListPackages(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "failed to fetch packages", http.StatusInternalServerError)
 		return
 	}
+	json.NewEncoder(w).Encode(pkgs)
+}
+
+func SearchPackagesHandler(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("query")
+	limitStr := r.URL.Query().Get("limit")
+	offsetStr := r.URL.Query().Get("offset")
+
+	limit, _ := strconv.Atoi(limitStr)
+	offset, _ := strconv.Atoi(offsetStr)
+	if limit <= 0 {
+		limit = 10
+	}
+
+	pkgs, err := database.SearchPackages(query, limit, offset)
+	if err != nil {
+		http.Error(w, "failed to fetch packages", http.StatusInternalServerError)
+		return
+	}
+
 	json.NewEncoder(w).Encode(pkgs)
 }

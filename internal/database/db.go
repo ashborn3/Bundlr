@@ -161,3 +161,28 @@ func IncrementDownloadCount(packageID, version string) error {
 	)
 	return err
 }
+
+func SearchPackages(query string, limit, offset int) ([]Package, error) {
+	rows, err := DB.Query(context.Background(),
+		`SELECT id, name, owner_id
+         FROM packages
+         WHERE name ILIKE '%' || $1 || '%'
+         ORDER BY name ASC
+         LIMIT $2 OFFSET $3`,
+		query, limit, offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var packages []Package
+	for rows.Next() {
+		var p Package
+		if err := rows.Scan(&p.ID, &p.Name, &p.OwnerID); err != nil {
+			return nil, err
+		}
+		packages = append(packages, p)
+	}
+	return packages, nil
+}

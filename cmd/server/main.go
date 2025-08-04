@@ -45,6 +45,7 @@ func main() {
 	r.Get("/packages/{name}/versions/{version}/download", handlers.DownloadVersion)
 	r.Get("/packages", handlers.ListPackages)
 	r.Get("/packages/{name}/versions", handlers.ListVersions)
+	r.Get("/packages", handlers.SearchPackagesHandler)
 
 	fmt.Println("🚀 Bundlr running on port", cfg.Port)
 	log.Fatal(http.ListenAndServe(":"+cfg.Port, r))
