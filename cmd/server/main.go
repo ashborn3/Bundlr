@@ -12,6 +12,7 @@ import (
 	"bundlr/internal/config"
 	"bundlr/internal/database"
 	"bundlr/internal/handlers"
+	mdlewrForIp "bundlr/internal/middleware"
 	"bundlr/internal/storage"
 )
 
@@ -28,6 +29,7 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)
+	r.Use(mdlewrForIp.RateLimitMiddleware)
 
 	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("OK"))
